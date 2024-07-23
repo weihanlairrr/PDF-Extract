@@ -67,7 +67,6 @@ def search_and_zip_case1(file, texts, h, out_dir, zipf):
     progress_bar.empty()
     progress_text.empty()
 
-
 # 定義搜尋多個文本並創建壓縮文件的函數，情況2
 def search_and_zip_case2(file, texts, symbol, height_map, out_dir, zipf):
     total_files = len(texts)
@@ -89,7 +88,7 @@ def search_and_zip_case2(file, texts, symbol, height_map, out_dir, zipf):
         # 更新進度條
         progress = (i + 1) / total_files
         progress_bar.progress(progress)
-        progress_text.text("正在擷取圖片: {text} ({i + 1}/{total_files})")
+        progress_text.text(f"正在擷取圖片: {text} ({i + 1}/{total_files})")
     progress_bar.empty()
     progress_text.empty()
 
@@ -186,6 +185,7 @@ def main():
                     formatted_text = format_text(text)
                     data.append({"檔名": os.path.splitext(image_file)[0], "文字": formatted_text})
 
+                    # 更新進度條
                     progress = (i + 1) / total_files
                     progress_bar.progress(progress)
                     progress_text.text(f"正在提取圖片文字: {image_file} ({i + 1}/{total_files})")
