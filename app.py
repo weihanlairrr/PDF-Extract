@@ -55,7 +55,7 @@ def search_and_zip_case1(file, texts, h, out_dir, zipf):
     progress_bar = st.progress(0)
     progress_text = st.empty()
     progress_text.text("準備載入PDF與CSV文件")
-    
+
     for i, text in enumerate(texts):
         page_num, img_p = search_extract_img(file, text, out_dir, h=h)
         if img_p:
@@ -115,57 +115,50 @@ if 'zip_file_ready' not in st.session_state:
 if 'df_text' not in st.session_state:
     st.session_state.df_text = pd.DataFrame()
 
-# Streamlit應用程序
 def main():
     create_directories()  # 確保必要的目錄存在
 
     st.title("PDF截圖和文字提取工具")
 
-    # 使用 st.columns 來橫向排列選項
     col1, col2 = st.columns(2)
     with col1:
         option = st.radio("選擇情況", ("每頁商品數「固定」的情形", "每頁商品數「不固定」的情形"), label_visibility="collapsed")
 
     with st.sidebar:
-        # 上傳PDF文件
         pdf_file = st.file_uploader("上傳PDF文件", type=["pdf"])
-    
-        # 上傳CSV文件
         csv_file = st.file_uploader("上傳CSV文件", type=["csv"])
-
-        # 選擇提取文字的語言
         language_option = st.radio("選擇提取文字的語言", ("繁體中文", "簡體中文"))
 
     if option == "每頁商品數「固定」的情形":
-        # 指定截圖高度
         height = st.text_area("指定截圖高度 (px)", placeholder="例如：255")
+        if height:
+            try:
+                height = int(height)
+            except ValueError:
+                st.error("高度必須是數字。")
+                return
     else:
-        # 設定符號和高度映射
         symbol = st.text_input("輸入用來判斷截圖高度的符號", placeholder="例如：$")
         height_map_str = st.text_area("輸入符號數量對應的截圖高度（格式：數量:高度，使用換行分隔）", placeholder="2:350\n3:240")
         height_map = {int(k): int(v) for k, v in (item.split(":") for item in height_map_str.split("\n") if item)}
-    
+
     if pdf_file and csv_file:
         if st.button("開始執行"):
-            # 創建臨時目錄
             temp_dir = "temp"
             output_dir = os.path.join(temp_dir, "output")
             os.makedirs(output_dir, exist_ok=True)
-            
-            # 保存上傳的文件
+
             pdf_path = os.path.join(temp_dir, pdf_file.name)
             with open(pdf_path, "wb") as f:
                 f.write(pdf_file.getbuffer())
-            
+
             csv_path = os.path.join(temp_dir, csv_file.name)
             with open(csv_path, "wb") as f:
                 f.write(csv_file.getbuffer())
 
-            # 讀取CSV的第一欄
             df = pd.read_csv(csv_path, encoding='utf-8')
             texts = df.iloc[:, 0].tolist()
 
-            # 創建包含高解析度圖片的壓縮文件
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, 'w') as zipf:
                 if option == "每頁商品數「固定」的情形":
@@ -173,12 +166,10 @@ def main():
                 else:
                     search_and_zip_case2(pdf_path, texts, symbol, height_map, output_dir, zipf)
 
-                # OCR處理圖片
                 image_files = [f for f in os.listdir(output_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
                 data = []
                 total_files = len(image_files)
 
-                # 初始化進度條和進度文本
                 progress_bar = st.progress(0)
                 progress_text = st.empty()
                 progress_text.text("準備載入截圖")
@@ -187,19 +178,17 @@ def main():
                     img_path = os.path.join(output_dir, image_file)
                     img = Image.open(img_path)
                     img = preprocess_image(img)
-                    
+
                     lang_option = 'chi_tra+eng' if language_option == "繁體中文" else 'chi_sim+eng'
                     custom_config = r'--oem 3 --psm 6'
                     text = pytesseract.image_to_string(img, lang=lang_option, config=custom_config)
                     formatted_text = format_text(text)
                     data.append({"檔名": os.path.splitext(image_file)[0], "文字": formatted_text})
 
-                    # 更新進度條
                     progress = (i + 1) / total_files
                     progress_bar.progress(progress)
                     progress_text.text(f"正在提取圖片文字: {image_file} ({i + 1}/{total_files})")
 
-                # 清空進度條和進度文本
                 progress_bar.empty()
                 progress_text.empty()
 
@@ -208,17 +197,14 @@ def main():
                 df_text.to_csv(csv_buffer, index=False)
                 csv_data = csv_buffer.getvalue().encode('utf-8')
 
-                # 將CSV文件添加到壓縮文件中
                 zipf.writestr("ocr_output.csv", csv_data)
 
             zip_buffer.seek(0)
 
-            # 更新 session state
             st.session_state.zip_buffer = zip_buffer.getvalue()
             st.session_state.zip_file_ready = True
             st.session_state.df_text = df_text
 
-    # 顯示CSV檔案預覽和下載按鈕
     if st.session_state.zip_file_ready and st.session_state.zip_buffer:
         st.dataframe(st.session_state.df_text)
         st.download_button(
@@ -230,3 +216,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
