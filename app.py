@@ -54,7 +54,7 @@ def search_and_zip_case1(file, texts, h, out_dir, zipf):
     total_files = len(texts)
     progress_bar = st.progress(0)
     progress_text = st.empty()
-    progress_text.text(f"0/{total_files}")
+    progress_text.text("準備載入PDF與CSV文件")
     
     for i, text in enumerate(texts):
         page_num, img_p = search_extract_img(file, text, out_dir, h=h)
@@ -72,7 +72,7 @@ def search_and_zip_case2(file, texts, symbol, height_map, out_dir, zipf):
     total_files = len(texts)
     progress_bar = st.progress(0)
     progress_text = st.empty()
-    progress_text.text(f"0/{total_files}")
+    progress_text.text("準備載入PDF與CSV文件")
     
     for i, text in enumerate(texts):
         res = search_pdf(file, text)
@@ -138,7 +138,7 @@ def main():
 
     if option == "每頁商品數「固定」的情形":
         # 指定截圖高度
-        height = st.number_input("指定截圖高度 (px)", min_value=1, max_value=10000, placeholder="例如：255")
+        height = st.number_input("指定截圖高度 (px)", placeholder="例如：255")
     else:
         # 設定符號和高度映射
         symbol = st.text_input("輸入用來判斷截圖高度的符號", placeholder="例如：$")
@@ -181,7 +181,7 @@ def main():
                 # 初始化進度條和進度文本
                 progress_bar = st.progress(0)
                 progress_text = st.empty()
-                progress_text.text(f"0/{total_files}")
+                progress_text.text("準備載入截圖")
 
                 for i, image_file in enumerate(image_files):
                     img_path = os.path.join(output_dir, image_file)
