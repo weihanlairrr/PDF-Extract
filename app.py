@@ -67,6 +67,7 @@ def search_and_zip_case1(file, texts, h, out_dir, zipf):
     progress_bar.empty()
     progress_text.empty()
 
+
 # 定義搜尋多個文本並創建壓縮文件的函數，情況2
 def search_and_zip_case2(file, texts, symbol, height_map, out_dir, zipf):
     total_files = len(texts)
@@ -88,7 +89,7 @@ def search_and_zip_case2(file, texts, symbol, height_map, out_dir, zipf):
         # 更新進度條
         progress = (i + 1) / total_files
         progress_bar.progress(progress)
-        progress_text.text(f"正在擷取圖片: {text} ({i + 1}/{total_files})")
+        progress_text.text("正在擷取圖片: {text} ({i + 1}/{total_files})")
     progress_bar.empty()
     progress_text.empty()
 
@@ -168,8 +169,13 @@ def main():
 
                 image_files = [f for f in os.listdir(output_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
                 data = []
+                total_files = len(image_files)
 
-                for image_file in image_files:
+                progress_bar = st.progress(0)
+                progress_text = st.empty()
+                progress_text.text("準備載入截圖")
+
+                for i, image_file in enumerate(image_files):
                     img_path = os.path.join(output_dir, image_file)
                     img = Image.open(img_path)
                     img = preprocess_image(img)
@@ -179,6 +185,14 @@ def main():
                     text = pytesseract.image_to_string(img, lang=lang_option, config=custom_config)
                     formatted_text = format_text(text)
                     data.append({"檔名": os.path.splitext(image_file)[0], "文字": formatted_text})
+                    
+                    total_files = total_files/2
+                    progress = (i + 1) / total_files
+                    progress_bar.progress(progress)
+                    progress_text.text(f"正在提取圖片文字: {image_file} ({i + 1}/{total_files})")
+
+                progress_bar.empty()
+                progress_text.empty()
 
                 df_text = pd.DataFrame(data)
                 csv_buffer = io.StringIO()
@@ -203,4 +217,4 @@ def main():
         )
 
 if __name__ == "__main__":
-    main()
+    main() 
