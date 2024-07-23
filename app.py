@@ -52,13 +52,29 @@ def search_extract_img(file, text, out_dir, h, offset=0):
 # 定義搜尋多個文本並創建壓縮文件的函數，情況1
 def search_and_zip_case1(file, texts, h, out_dir, zipf):
     total_files = len(texts)
+    progress_bar = st.progress(0)
+    progress_text = st.empty()
+    progress_text.text("準備載入PDF與CSV文件")
+
     for i, text in enumerate(texts):
         page_num, img_p = search_extract_img(file, text, out_dir, h=h)
         if img_p:
             zipf.write(img_p, os.path.basename(img_p))
+        # 更新進度條
+        progress = (i + 1) / total_files
+        progress_bar.progress(progress)
+        progress_text.text(f"正在處理: {text} ({i + 1}/{total_files})")
+    progress_bar.empty()
+    progress_text.empty()
+
 
 # 定義搜尋多個文本並創建壓縮文件的函數，情況2
 def search_and_zip_case2(file, texts, symbol, height_map, out_dir, zipf):
+    total_files = len(texts)
+    progress_bar = st.progress(0)
+    progress_text = st.empty()
+    progress_text.text("準備載入PDF與CSV文件")
+    
     for i, text in enumerate(texts):
         res = search_pdf(file, text)
         if res:
@@ -70,6 +86,12 @@ def search_and_zip_case2(file, texts, symbol, height_map, out_dir, zipf):
             img_p = extract_img(file, page_num, rect, out_dir, h=height, offset=-10)
             new_img_p = rename_img(img_p, f"{text}.png")
             zipf.write(new_img_p, os.path.basename(new_img_p))
+        # 更新進度條
+        progress = (i + 1) / total_files
+        progress_bar.progress(progress)
+        progress_text.text("正在擷取圖片: {text} ({i + 1}/{total_files})")
+    progress_bar.empty()
+    progress_text.empty()
 
 # 定義圖像預處理函數
 def preprocess_image(img):
@@ -140,45 +162,46 @@ def main():
 
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, 'w') as zipf:
+                progress_bar_1 = st.progress(0)
+                progress_text_1 = st.empty()
+                progress_text_1.text("準備載入PDF與CSV文件")
+
                 if option == "每頁商品數「固定」的情形":
                     search_and_zip_case1(pdf_path, texts, height, output_dir, zipf)
                 else:
                     search_and_zip_case2(pdf_path, texts, symbol, height_map, output_dir, zipf)
 
-            # 處理圖片並提取文字
-            image_files = [f for f in os.listdir(output_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
-            data = []
-            total_files = len(image_files)
+                image_files = [f for f in os.listdir(output_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
+                data = []
+                total_files = len(image_files)
 
-            progress_bar = st.progress(0)
-            progress_text = st.empty()
-            progress_text.text("準備載入截圖")
+                progress_bar_2 = st.progress(0)
+                progress_text_2 = st.empty()
+                progress_text_2.text("準備載入截圖")
 
-            for i, image_file in enumerate(image_files):
-                img_path = os.path.join(output_dir, image_file)
-                img = Image.open(img_path)
-                img = preprocess_image(img)
+                for i, image_file in enumerate(image_files):
+                    img_path = os.path.join(output_dir, image_file)
+                    img = Image.open(img_path)
+                    img = preprocess_image(img)
 
-                lang_option = 'chi_tra+eng' if language_option == "繁體中文" else 'chi_sim+eng'
-                custom_config = r'--oem 3 --psm 6'
-                text = pytesseract.image_to_string(img, lang=lang_option, config=custom_config)
-                formatted_text = format_text(text)
-                data.append({"檔名": os.path.splitext(image_file)[0], "文字": formatted_text})
+                    lang_option = 'chi_tra+eng' if language_option == "繁體中文" else 'chi_sim+eng'
+                    custom_config = r'--oem 3 --psm 6'
+                    text = pytesseract.image_to_string(img, lang=lang_option, config=custom_config)
+                    formatted_text = format_text(text)
+                    data.append({"檔名": os.path.splitext(image_file)[0], "文字": formatted_text})
 
-                # 更新進度條
-                progress = (i + 1) / total_files
-                progress_bar.progress(progress)
-                progress_text.text(f"正在提取圖片文字: {image_file} ({i + 1}/{total_files})")
+                    progress = (i + 1) / total_files
+                    progress_bar_2.progress(progress)
+                    progress_text_2.text(f"正在提取圖片文字: {image_file} ({i + 1}/{total_files})")
 
-            progress_bar.empty()
-            progress_text.empty()
+                progress_bar_2.empty()
+                progress_text_2.empty()
 
-            df_text = pd.DataFrame(data)
-            csv_buffer = io.StringIO()
-            df_text.to_csv(csv_buffer, index=False)
-            csv_data = csv_buffer.getvalue().encode('utf-8')
+                df_text = pd.DataFrame(data)
+                csv_buffer = io.StringIO()
+                df_text.to_csv(csv_buffer, index=False)
+                csv_data = csv_buffer.getvalue().encode('utf-8')
 
-            with zipfile.ZipFile(zip_buffer, 'a') as zipf:
                 zipf.writestr("ocr_output.csv", csv_data)
 
             zip_buffer.seek(0)
