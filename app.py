@@ -50,12 +50,8 @@ def search_extract_img(file, text, out_dir, h, offset=0):
     return None, None
 
 # 定義搜尋多個文本並創建壓縮文件的函數，情況1
-def search_and_zip_case1(file, texts, h, out_dir, zipf):
+def search_and_zip_case1(file, texts, h, out_dir, zipf, progress_bar, progress_text):
     total_files = len(texts)
-    progress_bar = st.progress(0)
-    progress_text = st.empty()
-    progress_text.text("準備載入PDF與CSV文件")
-
     for i, text in enumerate(texts):
         page_num, img_p = search_extract_img(file, text, out_dir, h=h)
         if img_p:
@@ -67,14 +63,9 @@ def search_and_zip_case1(file, texts, h, out_dir, zipf):
     progress_bar.empty()
     progress_text.empty()
 
-
 # 定義搜尋多個文本並創建壓縮文件的函數，情況2
-def search_and_zip_case2(file, texts, symbol, height_map, out_dir, zipf):
+def search_and_zip_case2(file, texts, symbol, height_map, out_dir, zipf, progress_bar, progress_text):
     total_files = len(texts)
-    progress_bar = st.progress(0)
-    progress_text = st.empty()
-    progress_text.text("準備載入PDF與CSV文件")
-    
     for i, text in enumerate(texts):
         res = search_pdf(file, text)
         if res:
@@ -162,18 +153,17 @@ def main():
 
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, 'w') as zipf:
+                progress_bar = st.progress(0)
+                progress_text = st.empty()
+
                 if option == "每頁商品數「固定」的情形":
-                    search_and_zip_case1(pdf_path, texts, height, output_dir, zipf)
+                    search_and_zip_case1(pdf_path, texts, height, output_dir, zipf, progress_bar, progress_text)
                 else:
-                    search_and_zip_case2(pdf_path, texts, symbol, height_map, output_dir, zipf)
+                    search_and_zip_case2(pdf_path, texts, symbol, height_map, output_dir, zipf, progress_bar, progress_text)
 
                 image_files = [f for f in os.listdir(output_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
                 data = []
                 total_files = len(image_files)
-
-                progress_bar = st.progress(0)
-                progress_text = st.empty()
-                progress_text.text("準備載入截圖")
 
                 for i, image_file in enumerate(image_files):
                     img_path = os.path.join(output_dir, image_file)
@@ -186,6 +176,7 @@ def main():
                     formatted_text = format_text(text)
                     data.append({"檔名": os.path.splitext(image_file)[0], "文字": formatted_text})
                     
+                    # 更新進度條
                     progress = (i + 1) / total_files
                     progress_bar.progress(progress)
                     progress_text.text(f"正在提取圖片文字: {image_file} ({i + 1}/{total_files})")
@@ -216,4 +207,4 @@ def main():
         )
 
 if __name__ == "__main__":
-    main() 
+    main()
