@@ -1,0 +1,5 @@
+poppler-utils
+tesseract-ocr
+tesseract-ocr-eng
+tesseract-ocr-chi-tra
+tesseract-ocr-chi-sim
