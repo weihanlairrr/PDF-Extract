@@ -1,30 +1,51 @@
-# 使用基礎映像
-FROM python:3.9-slim
+# this base image seems to be quite similar to the streamlit cloud environment
+FROM python:3.11-slim-bullseye
 
-# 安裝必要的系統依賴項
-RUN apt-get update && apt-get install -y \
-    tesseract-ocr \
-    tesseract-ocr-chi-sim \
-    tesseract-ocr-chi-tra \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_DEFAULT_TIMEOUT=120 \
+    LC_ALL=C.UTF-8 \
+    LANG=C.UTF-8
 
-# 設置工作目錄
+# we need some build tools for installing additional python pip packages
+RUN apt-get update \
+    && apt-get install --yes \
+    software-properties-common \
+    build-essential \
+    gcc \
+    g++ \
+    cmake \
+    git \
+    curl \
+    python3-dev \
+    nano
+
 WORKDIR /app
 
-# 複製需求文件並安裝 Python 依賴項
+# if we have a packages.txt, install it here, uncomment the two lines below
+# be aware that packages.txt must have LF endings only!
+COPY packages.txt packages.txt
+RUN xargs -a packages.txt apt-get install --yes
+
+RUN pip install --no-cache-dir --upgrade pip setuptools wheel uv
 COPY requirements.txt requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+RUN uv pip install --system --no-cache -r requirements.txt
 
-# 複製應用程序代碼
-COPY . .
-
-# 暴露 Streamlit 默認端口
 EXPOSE 8501
 
-# 運行 Streamlit 應用
-CMD ["streamlit", "run", "app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+HEALTHCHECK --interval=1m --timeout=20s \
+    CMD curl --fail http://localhost:8501/_stcore/health
 
+COPY . .
 
+CMD ["streamlit", "run", "streamlit_app.py"]
+# CMD ["streamlit", "run", "helpers/easy_ocr.py"]
+
+# Some docker commands see below:
+# docker build --progress=plain --tag streamlit-tesseract:latest .
+# docker run -ti -p 8501:8501 --rm streamlit-tesseract:latest /bin/bash
+# docker run -ti -p 8501:8501 --rm streamlit-tesseract:latest
+# docker run -ti -p 8501:8501 -v ${pwd}:/app --rm streamlit-tesseract:latest
+# docker run -ti -p 8501:8501 -v ${pwd}:/app --rm streamlit-tesseract:latest /bin/bash
