@@ -50,23 +50,15 @@ def search_extract_img(file, text, out_dir, h, offset=0):
     return None, None
 
 # 定義搜尋多個文本並創建壓縮文件的函數，情況1
-def search_and_zip_case1(file, texts, h, out_dir, zipf, progress_bar, progress_text):
-    total_files = len(texts)
-    for i, text in enumerate(texts):
+def search_and_zip_case1(file, texts, h, out_dir, zipf):
+    for text in texts:
         page_num, img_p = search_extract_img(file, text, out_dir, h=h)
         if img_p:
             zipf.write(img_p, os.path.basename(img_p))
-        # 更新進度條
-        progress = (i + 1) / total_files
-        progress_bar.progress(progress)
-        progress_text.text(f"正在處理: {text} ({i + 1}/{total_files})")
-    progress_bar.empty()
-    progress_text.empty()
 
 # 定義搜尋多個文本並創建壓縮文件的函數，情況2
-def search_and_zip_case2(file, texts, symbol, height_map, out_dir, zipf, progress_bar, progress_text):
-    total_files = len(texts)
-    for i, text in enumerate(texts):
+def search_and_zip_case2(file, texts, symbol, height_map, out_dir, zipf):
+    for text in texts:
         res = search_pdf(file, text)
         if res:
             page_num, rect = res[0]
@@ -77,12 +69,6 @@ def search_and_zip_case2(file, texts, symbol, height_map, out_dir, zipf, progres
             img_p = extract_img(file, page_num, rect, out_dir, h=height, offset=-10)
             new_img_p = rename_img(img_p, f"{text}.png")
             zipf.write(new_img_p, os.path.basename(new_img_p))
-        # 更新進度條
-        progress = (i + 1) / total_files
-        progress_bar.progress(progress)
-        progress_text.text(f"正在擷取圖片: {text} ({i + 1}/{total_files})")
-    progress_bar.empty()
-    progress_text.empty()
 
 # 定義圖像預處理函數
 def preprocess_image(img):
@@ -153,17 +139,18 @@ def main():
 
             zip_buffer = io.BytesIO()
             with zipfile.ZipFile(zip_buffer, 'w') as zipf:
-                progress_bar = st.progress(0)
-                progress_text = st.empty()
-
                 if option == "每頁商品數「固定」的情形":
-                    search_and_zip_case1(pdf_path, texts, height, output_dir, zipf, progress_bar, progress_text)
+                    search_and_zip_case1(pdf_path, texts, height, output_dir, zipf)
                 else:
-                    search_and_zip_case2(pdf_path, texts, symbol, height_map, output_dir, zipf, progress_bar, progress_text)
+                    search_and_zip_case2(pdf_path, texts, symbol, height_map, output_dir, zipf)
 
                 image_files = [f for f in os.listdir(output_dir) if f.endswith(('.png', '.jpg', '.jpeg'))]
                 data = []
                 total_files = len(image_files)
+
+                progress_bar = st.progress(0)
+                progress_text = st.empty()
+                progress_text.text("準備載入截圖")
 
                 for i, image_file in enumerate(image_files):
                     img_path = os.path.join(output_dir, image_file)
