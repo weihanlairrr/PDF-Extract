@@ -51,14 +51,30 @@ def search_extract_img(file, text, out_dir, h, offset=0):
 
 # 定義搜尋多個文本並創建壓縮文件的函數，情況1
 def search_and_zip_case1(file, texts, h, out_dir, zipf):
-    for text in texts:
+    total_files = len(texts)
+    progress_bar = st.progress(0)
+    progress_text = st.empty()
+    progress_text.text("準備載入PDF與CSV文件")
+
+    for i, text in enumerate(texts):
         page_num, img_p = search_extract_img(file, text, out_dir, h=h)
         if img_p:
             zipf.write(img_p, os.path.basename(img_p))
+        # 更新進度條
+        progress = (i + 1) / total_files
+        progress_bar.progress(progress)
+        progress_text.text(f"正在擷取圖片: {text} ({i + 1}/{total_files})")
+    progress_bar.empty()
+    progress_text.empty()
 
 # 定義搜尋多個文本並創建壓縮文件的函數，情況2
 def search_and_zip_case2(file, texts, symbol, height_map, out_dir, zipf):
-    for text in texts:
+    total_files = len(texts)
+    progress_bar = st.progress(0)
+    progress_text = st.empty()
+    progress_text.text("準備載入PDF與CSV文件")
+    
+    for i, text in enumerate(texts):
         res = search_pdf(file, text)
         if res:
             page_num, rect = res[0]
@@ -69,6 +85,12 @@ def search_and_zip_case2(file, texts, symbol, height_map, out_dir, zipf):
             img_p = extract_img(file, page_num, rect, out_dir, h=height, offset=-10)
             new_img_p = rename_img(img_p, f"{text}.png")
             zipf.write(new_img_p, os.path.basename(new_img_p))
+        # 更新進度條
+        progress = (i + 1) / total_files
+        progress_bar.progress(progress)
+        progress_text.text(f"正在擷取圖片: {text} ({i + 1}/{total_files})")
+    progress_bar.empty()
+    progress_text.empty()
 
 # 定義圖像預處理函數
 def preprocess_image(img):
@@ -163,7 +185,6 @@ def main():
                     formatted_text = format_text(text)
                     data.append({"檔名": os.path.splitext(image_file)[0], "文字": formatted_text})
                     
-                    # 更新進度條
                     progress = (i + 1) / total_files
                     progress_bar.progress(progress)
                     progress_text.text(f"正在提取圖片文字: {image_file} ({i + 1}/{total_files})")
@@ -194,4 +215,4 @@ def main():
         )
 
 if __name__ == "__main__":
-    main()
+    main() 
