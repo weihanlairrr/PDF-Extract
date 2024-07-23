@@ -138,7 +138,7 @@ def main():
 
     if option == "每頁商品數「固定」的情形":
         # 指定截圖高度
-        height = st.number_input("指定截圖高度 (px)", placeholder="例如：255")
+        height = st.text_area("指定截圖高度 (px)", placeholder="例如：255")
     else:
         # 設定符號和高度映射
         symbol = st.text_input("輸入用來判斷截圖高度的符號", placeholder="例如：$")
