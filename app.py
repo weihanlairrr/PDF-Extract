@@ -1,6 +1,7 @@
 import streamlit as st
 import fitz  # PyMuPDF
 import os
+import shutil
 import zipfile
 import pandas as pd
 import pytesseract
@@ -10,6 +11,11 @@ import io
 def create_directories():
     os.makedirs("static", exist_ok=True)
     os.makedirs("temp", exist_ok=True)
+
+def clear_directory(directory):
+    if os.path.exists(directory):
+        shutil.rmtree(directory)
+    os.makedirs(directory, exist_ok=True)
 
 # 定義在PDF中搜尋文本並返回頁碼和矩形區域的函數
 def search_pdf(file, text):
@@ -146,7 +152,7 @@ def main():
         if st.button("開始執行"):
             temp_dir = "temp"
             output_dir = os.path.join(temp_dir, "output")
-            os.makedirs(output_dir, exist_ok=True)
+            clear_directory(output_dir)  # 清空 output 目錄
 
             pdf_path = os.path.join(temp_dir, pdf_file.name)
             with open(pdf_path, "wb") as f:
@@ -215,4 +221,4 @@ def main():
         )
 
 if __name__ == "__main__":
-    main() 
+    main()
