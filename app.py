@@ -186,7 +186,6 @@ def main():
                     formatted_text = format_text(text)
                     data.append({"檔名": os.path.splitext(image_file)[0], "文字": formatted_text})
                     
-                    total_files = total_files/2
                     progress = (i + 1) / total_files
                     progress_bar.progress(progress)
                     progress_text.text(f"正在提取圖片文字: {image_file} ({i + 1}/{total_files})")
