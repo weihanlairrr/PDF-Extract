@@ -211,8 +211,8 @@ def main():
 
                 df_text = pd.DataFrame(data)
                 csv_buffer = io.StringIO()
-                df_text.to_csv(csv_buffer, index=False)
-                csv_data = csv_buffer.getvalue().encode('utf-8')
+                df_text.to_csv(csv_buffer, index=False, encoding='utf-8-sig')  # 明確指定編碼為utf-8-sig
+                csv_data = csv_buffer.getvalue().encode('utf-8-sig')  # 明確指定編碼為utf-8-sig
 
                 zipf.writestr("ocr_output.csv", csv_data)
 
