@@ -1,5 +1,5 @@
 import streamlit as st
-import fitz 
+import fitz  # PyMuPDF
 import os
 import shutil
 import zipfile
@@ -132,7 +132,7 @@ def main():
 
     with st.sidebar:
         pdf_file = st.file_uploader("上傳PDF文件", type=["pdf"])
-        csv_file = st.file_uploader("上傳CSV文件", type=["csv"])
+        csv_file = st.file_uploader("上傳CSV文件或Excel文件", type=["csv", "xlsx"])
         language_option = st.radio("選擇提取文字的語言", ("繁體中文", "簡體中文"))
 
     if option == "每頁商品數「固定」的情形":
@@ -167,9 +167,12 @@ def main():
             except UnicodeDecodeError:
                 try:
                     df = pd.read_csv(csv_path, encoding='latin1')
-                except Exception as e:
-                    st.error(f"無法讀取CSV文件: {e}")
-                    return
+                except UnicodeDecodeError:
+                    try:
+                        df = pd.read_excel(csv_path)
+                    except Exception as e:
+                        st.error(f"無法讀取CSV或Excel文件: {e}")
+                        return
 
             texts = df.iloc[:, 0].tolist()
 
