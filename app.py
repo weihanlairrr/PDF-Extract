@@ -1,5 +1,5 @@
 import streamlit as st
-import fitz  # PyMuPDF
+import fitz 
 import os
 import shutil
 import zipfile
@@ -162,7 +162,15 @@ def main():
             with open(csv_path, "wb") as f:
                 f.write(csv_file.getbuffer())
 
-            df = pd.read_csv(csv_path, encoding='utf-8')
+            try:
+                df = pd.read_csv(csv_path, encoding='utf-8')
+            except UnicodeDecodeError:
+                try:
+                    df = pd.read_csv(csv_path, encoding='latin1')
+                except Exception as e:
+                    st.error(f"無法讀取CSV文件: {e}")
+                    return
+
             texts = df.iloc[:, 0].tolist()
 
             zip_buffer = io.BytesIO()
